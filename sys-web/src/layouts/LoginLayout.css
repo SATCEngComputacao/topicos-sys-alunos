@@ -1,0 +1,21 @@
+.login-layout {
+  display: flex;
+  align-items: center;
+  padding-top: 90px;
+  padding-bottom: 60px;
+  text-align: center;
+  min-height: 100%;
+}
+
+.form-signin {
+  width: 100%;
+  max-width: 330px;
+  padding: 15px;
+  margin: auto;
+}
+
+.form-signin .invalid-feedback,
+.form-signin .form-label {
+  display: block;
+  text-align: left;
+}
