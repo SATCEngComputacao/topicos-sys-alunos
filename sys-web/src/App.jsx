@@ -7,9 +7,15 @@ import LoginLayout from "./layouts/LoginLayout";
 import Auth from "./screens/Auth";
 import Home from "./screens/Home";
 
+/* CURSOS */
 import CursosList from "./screens/Cursos/List";
 import CursosAdd from "./screens/Cursos/Add";
 import CursosEdit from "./screens/Cursos/Edit";
+
+/* ALUNOS */
+import AlunosList from "./screens/Alunos/List";
+import AlunosAdd from "./screens/Alunos/Add";
+import AlunosEdit from "./screens/Alunos/Edit";
 
 function RequireLogin() {
   const location = useLocation();
@@ -32,6 +38,11 @@ function App() {
                 <Route index element={<CursosList />} />
                 <Route path="add" element={<CursosAdd />} />
                 <Route path="edit/:id" element={<CursosEdit />} />
+              </Route>
+              <Route path="alunos">
+                <Route index element={<AlunosList />} />
+                <Route path="add" element={<AlunosAdd />} />
+                <Route path="edit/:id" element={<AlunosEdit />} />
               </Route>
             </Fragment>
           ) : (
