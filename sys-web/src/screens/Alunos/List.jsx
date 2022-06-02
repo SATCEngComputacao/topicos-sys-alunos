@@ -6,18 +6,42 @@ import LoadingHolder from "~/components/LoadingHolder";
 import { listAlunos, destroyAluno } from "~/actions/alunos";
 
 export default function List() {
-  const alunos = useQuery("alunos", listAlunos);
-  const fetchDestroyAluno = useMutation(item => destroyAluno(item.id));
-
   // alunos.isLoading = vai indicar um carregamento ta rolando ou nao
   // alunos.data = conter os dados do servidor após o carregamento (ou do cache)
   // alunos.status = success, error ou loading
   // alunos.error = mensagem de erro que veio do servidor
+  const alunos = useQuery("alunos", listAlunos);
+  const fetchDestroyAluno = useMutation(item => destroyAluno(item.id));
 
   const isLoading = !!alunos.isLoading || !!fetchDestroyAluno.isLoading;
 
   return (
     <LoadingHolder loading={!!isLoading}>
+      {alunos.status === "error" && (
+        <div className="alert alert-danger fade show" role="alert">
+          Não foi possível receber a lista de alunos do sistema neste momento
+        </div>
+      )}
+      {fetchDestroyAluno.status === "error" && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          Não foi possível exluir este aluno neste momento
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => fetchDestroyAluno.reset()}></button>
+        </div>
+      )}
+      {fetchDestroyAluno.status === "success" && (
+        <div className="alert alert-success alert-dismissible fade show" role="alert">
+          Aluno excluído com sucesso!
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => fetchDestroyAluno.reset()}></button>
+        </div>
+      )}
       <div className="table-responsive">
         <Link className="btn btn-primary float-end" to="/alunos/add" role="button">
           <svg
