@@ -70,13 +70,13 @@ function AuthProvider(props) {
   };
 
   useEffect(() => {
-    if (!data) {
+    if (!!isPreloadingLogin && !data) {
       const storageUsuario = restoreLoginFromStorage();
       if (!!storageUsuario && "token" in storageUsuario) {
         setData(storageUsuario);
       }
+      setIsPreloadingLogin(false);
     }
-    setIsPreloadingLogin(false);
   }, []);
 
   if (!!isPreloadingLogin) {

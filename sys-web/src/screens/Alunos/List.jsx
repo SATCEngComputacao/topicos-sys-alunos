@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "react-query";
 import { Link } from "react-router-dom";
 
 import LoadingHolder from "~/components/LoadingHolder";
@@ -6,46 +6,18 @@ import LoadingHolder from "~/components/LoadingHolder";
 import { listAlunos, destroyAluno } from "~/actions/alunos";
 
 export default function List() {
-  const [loading, setLoading] = useState(false);
-  const [items, setItems] = useState([]);
+  const alunos = useQuery("alunos", listAlunos);
+  const fetchDestroyAluno = useMutation(item => destroyAluno(item.id));
 
-  async function fetchDestroyAluno(item) {
-    if (window.confirm(`Você confirma a exclusão do aluno ${item.name}?`)) {
-      setLoading(true);
+  // alunos.isLoading = vai indicar um carregamento ta rolando ou nao
+  // alunos.data = conter os dados do servidor após o carregamento (ou do cache)
+  // alunos.status = success, error ou loading
+  // alunos.error = mensagem de erro que veio do servidor
 
-      try {
-        const data = await destroyAluno(item.id);
-        if (!!data?.success) {
-          setItems([]);
-          fetchListAlunos();
-        }
-      } catch (err) {
-        alert("Não foi possível excluir o aluno neste momento");
-      } finally {
-        setLoading(false);
-      }
-    }
-  }
-
-  async function fetchListAlunos() {
-    setLoading(true);
-
-    try {
-      const data = await listAlunos();
-      setItems(data);
-    } catch (err) {
-      alert("Não foi possível carregar a lista de alunos do sistema");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchListAlunos();
-  }, []);
+  const isLoading = !!alunos.isLoading || !!fetchDestroyAluno.isLoading;
 
   return (
-    <LoadingHolder loading={!!loading}>
+    <LoadingHolder loading={!!isLoading}>
       <div className="table-responsive">
         <Link className="btn btn-primary float-end" to="/alunos/add" role="button">
           <svg
@@ -74,39 +46,43 @@ export default function List() {
               </th>
             </tr>
           </thead>
-          <tbody>
-            {items.length === 0 && !loading && (
-              <tr>
-                <td colSpan={4} className="text-center p-5">
-                  Nenhum aluno cadastrado em nosso sistema!
-                </td>
-              </tr>
-            )}
-            {items.map(item => (
-              <tr key={item.id}>
-                <td>{item.name}</td>
-                <td>
-                  <a href={`mailto:${item.email}`}>{item.email}</a>
-                </td>
-                <td>{item.Curso.name}</td>
-                <td className="text-center">
-                  <Link className="btn btn-info btn-sm" to={`/alunos/edit/${item.id}`} role="button">
-                    Editar
-                  </Link>
-                  <a
-                    onClick={event => {
-                      event.preventDefault();
-                      fetchDestroyAluno(item);
-                    }}
-                    className="btn btn-danger btn-sm"
-                    href="#delete-aluno"
-                    role="button">
-                    Excluir
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+          {!!alunos.data && (
+            <tbody>
+              {alunos.data.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="text-center p-5">
+                    Nenhum aluno cadastrado em nosso sistema!
+                  </td>
+                </tr>
+              )}
+              {alunos.data.map(item => (
+                <tr key={item.id}>
+                  <td>{item.name}</td>
+                  <td>
+                    <a href={`mailto:${item.email}`}>{item.email}</a>
+                  </td>
+                  <td>{item.Curso.name}</td>
+                  <td className="text-center">
+                    <Link className="btn btn-info btn-sm" to={`/alunos/edit/${item.id}`} role="button">
+                      Editar
+                    </Link>
+                    <a
+                      onClick={event => {
+                        event.preventDefault();
+                        if (window.confirm(`Você confirma a exclusão do aluno ${item.name}?`)) {
+                          fetchDestroyAluno.mutate(item);
+                        }
+                      }}
+                      className="btn btn-danger btn-sm"
+                      href="#delete-aluno"
+                      role="button">
+                      Excluir
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          )}
         </table>
       </div>
     </LoadingHolder>

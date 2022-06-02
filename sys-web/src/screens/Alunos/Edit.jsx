@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation } from "react-query";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 
@@ -9,7 +9,7 @@ import SysInput from "~/components/SysInput";
 import { findAluno, updateAluno } from "~/actions/alunos";
 import { listCursos } from "~/actions/cursos";
 
-import { hasFormError, flatObjectToOptions, flatArrayToObject } from "~/utils";
+import { hasFormError } from "~/utils";
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Campo obrigatório"),
@@ -17,72 +17,37 @@ const validationSchema = Yup.object({
   cursoId: Yup.string().required("Campo obrigatório"),
 });
 
-export default function Add() {
-  const [loading, setLoading] = useState(false);
-  const [aluno, setAluno] = useState({
-    name: "",
-    email: "",
-    cursoId: null,
-  });
-  const [cursos, setCursos] = useState([]);
+export default function Edit() {
+  const navigate = useNavigate();
 
   const { id } = useParams();
+  const currentAluno = useQuery(`aluno-${id}`, () => findAluno(id));
+  const fetchUpdateAluno = useMutation(formData => updateAluno(id, formData), {
+    onSuccess: () => navigate("/alunos", { replace: true }),
+  });
 
-  const navigate = useNavigate();
+  const cursos = useQuery("cursos", listCursos);
 
   const formik = useFormik({
     enableReinitialize: true,
-    initialValues: aluno,
+    initialValues:
+      currentAluno.status === "success"
+        ? currentAluno.data
+        : {
+            name: "",
+            email: "",
+            cursoId: "",
+          },
     validationSchema,
-    onSubmit: async values => {
-      setLoading(true);
-
-      try {
-        const data = await updateAluno(id, values);
-        if (!!data?.success) {
-          navigate("/alunos", { replace: true });
-        }
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        setLoading(false);
-      }
+    onSubmit: values => {
+      fetchUpdateAluno.mutate(values);
     },
   });
 
-  async function fetchAluno(id) {
-    setLoading(true);
-
-    try {
-      const data = await findAluno(id);
-      setAluno(data);
-    } catch (err) {
-      alert("Não foi possível carregar os dados do aluno do sistema");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function findListCursos() {
-    setLoading(true);
-
-    try {
-      const data = await listCursos();
-      setCursos(data);
-    } catch (err) {
-      //
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    findListCursos();
-    fetchAluno(id);
-  }, [id]);
+  const isLoading = !!currentAluno.isLoading || !!fetchUpdateAluno.isLoading;
 
   return (
-    <LoadingHolder loading={!!loading}>
+    <LoadingHolder loading={!!isLoading}>
       <form onSubmit={formik.handleSubmit} noValidate>
         <h2 className="h3 mb-4 fw-normal">Editando Aluno</h2>
         <SysInput
@@ -103,13 +68,14 @@ export default function Add() {
         />
         <SysInput
           id="cursoId"
-          options={flatObjectToOptions(flatArrayToObject(cursos, "id", "name"))}
+          disabled={!cursos.data}
+          options={cursos.status === "success" ? cursos.data : [{ value: "", label: "Carregando cursos..." }]}
           label="Curso Matriculado"
           value={formik.values.cursoId}
           onChange={formik.handleChange}
           error={hasFormError(formik, "cursoId")}
         />
-        <button className="btn btn-lg btn-primary mt-3" type="submit">
+        <button disabled={isLoading || !cursos.data} className="btn btn-lg btn-primary mt-3" type="submit">
           Alterar
         </button>
       </form>

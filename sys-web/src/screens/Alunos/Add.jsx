@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation } from "react-query";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 
@@ -9,7 +9,7 @@ import SysInput from "~/components/SysInput";
 import { createAluno } from "~/actions/alunos";
 import { listCursos } from "~/actions/cursos";
 
-import { hasFormError, flatObjectToOptions, flatArrayToObject } from "~/utils";
+import { hasFormError } from "~/utils";
 
 const validationSchema = Yup.object({
   name: Yup.string().required("Campo obrigatório"),
@@ -18,53 +18,28 @@ const validationSchema = Yup.object({
 });
 
 export default function Add() {
-  const [loading, setLoading] = useState(false);
-  const [cursos, setCursos] = useState([]);
-
   const navigate = useNavigate();
+
+  const fetchCreateAluno = useMutation(createAluno, {
+    onSuccess: () => navigate("/alunos", { replace: true }),
+  });
+
+  const cursos = useQuery("cursos", listCursos);
 
   const formik = useFormik({
     initialValues: {
       name: "",
+      email: "",
+      cursoId: "",
     },
     validationSchema,
-    onSubmit: async values => {
-      setLoading(true);
-
-      try {
-        const data = await createAluno(values);
-        if (!!data?.id) {
-          navigate("/alunos", { replace: true });
-        }
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        setLoading(false);
-      }
+    onSubmit: values => {
+      fetchCreateAluno.mutate(values);
     },
   });
 
-  async function findListCursos() {
-    setLoading(true);
-
-    try {
-      const data = await listCursos();
-      setCursos(data);
-    } catch (err) {
-      //
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    if (cursos.length === 0) {
-      findListCursos();
-    }
-  }, []);
-
   return (
-    <LoadingHolder loading={!!loading}>
+    <LoadingHolder loading={!!fetchCreateAluno.isLoading}>
       <form onSubmit={formik.handleSubmit} noValidate>
         <h2 className="h3 mb-4 fw-normal">Adicionando novo Aluno</h2>
         <SysInput
@@ -85,13 +60,17 @@ export default function Add() {
         />
         <SysInput
           id="cursoId"
-          options={flatObjectToOptions(flatArrayToObject(cursos, "id", "name"))}
+          disabled={!cursos.data}
+          options={cursos.status === "success" ? cursos.data : [{ value: "", label: "Carregando cursos..." }]}
           label="Curso Matriculado"
           value={formik.values.cursoId}
           onChange={formik.handleChange}
           error={hasFormError(formik, "cursoId")}
         />
-        <button className="btn btn-lg btn-primary mt-3" type="submit">
+        <button
+          disabled={!!fetchCreateAluno.isLoading || !cursos.data}
+          className="btn btn-lg btn-primary mt-3"
+          type="submit">
           Cadastrar
         </button>
       </form>

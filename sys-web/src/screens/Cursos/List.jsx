@@ -1,51 +1,41 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useQuery, useMutation } from "react-query";
 
 import LoadingHolder from "~/components/LoadingHolder";
 
 import { listCursos, destroyCurso } from "~/actions/cursos";
 
 export default function List() {
-  const [loading, setLoading] = useState(false);
-  const [items, setItems] = useState([]);
-
-  async function fetchDestroyCurso(item) {
-    if (window.confirm(`Você confirma a exclusão do curso ${item.name}?`)) {
-      setLoading(true);
-
-      try {
-        const data = await destroyCurso(item.id);
-        if (!!data?.success) {
-          setItems([]);
-          fetchListCursos();
-        }
-      } catch (err) {
-        alert("Não foi possível excluir o curso neste momento");
-      } finally {
-        setLoading(false);
-      }
-    }
-  }
-
-  async function fetchListCursos() {
-    setLoading(true);
-
-    try {
-      const data = await listCursos();
-      setItems(data);
-    } catch (err) {
-      alert("Não foi possível carregar a lista de cursos do sistema");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchListCursos();
-  }, []);
+  const cursos = useQuery("cursos", listCursos);
+  const fetchDestroyCurso = useMutation(item => destroyCurso(item.id));
 
   return (
-    <LoadingHolder loading={!!loading}>
+    <LoadingHolder loading={!!cursos.isLoading || !!fetchDestroyCurso.isLoading}>
+      {cursos.status === "error" && (
+        <div className="alert alert-danger fade show" role="alert">
+          Não foi possível receber a lista de cursos do sistema neste momento
+        </div>
+      )}
+      {fetchDestroyCurso.status === "error" && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          Não foi possível exluir este curso neste momento
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => fetchDestroyCurso.reset()}></button>
+        </div>
+      )}
+      {fetchDestroyCurso.status === "success" && (
+        <div className="alert alert-success alert-dismissible fade show" role="alert">
+          Curso excluído com sucesso!
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => fetchDestroyCurso.reset()}></button>
+        </div>
+      )}
       <div className="table-responsive">
         <Link className="btn btn-primary float-end" to="/cursos/add" role="button">
           <svg
@@ -75,36 +65,40 @@ export default function List() {
               </th>
             </tr>
           </thead>
-          <tbody>
-            {items.length === 0 && !loading && (
-              <tr>
-                <td colSpan={3} className="text-center p-5">
-                  Nenhum curso cadastrado em nosso sistema!
-                </td>
-              </tr>
-            )}
-            {items.map(item => (
-              <tr key={item.id}>
-                <td>{item.name}</td>
-                <td className="text-center">{item.alunosCount}</td>
-                <td className="text-center">
-                  <Link className="btn btn-info btn-sm" to={`/cursos/edit/${item.id}`} role="button">
-                    Editar
-                  </Link>
-                  <a
-                    onClick={event => {
-                      event.preventDefault();
-                      fetchDestroyCurso(item);
-                    }}
-                    className="btn btn-danger btn-sm"
-                    href="#delete-curso"
-                    role="button">
-                    Excluir
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+          {!!cursos.data && (
+            <tbody>
+              {cursos.data.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="text-center p-5">
+                    Nenhum curso cadastrado em nosso sistema!
+                  </td>
+                </tr>
+              )}
+              {cursos.data.map(item => (
+                <tr key={item.id}>
+                  <td>{item.name}</td>
+                  <td className="text-center">{item.alunosCount}</td>
+                  <td className="text-center">
+                    <Link className="btn btn-info btn-sm" to={`/cursos/edit/${item.id}`} role="button">
+                      Editar
+                    </Link>
+                    <a
+                      onClick={event => {
+                        event.preventDefault();
+                        if (window.confirm(`Você confirma a exclusão do curso ${item.name}?`)) {
+                          fetchDestroyCurso.mutate(item);
+                        }
+                      }}
+                      className="btn btn-danger btn-sm"
+                      href="#delete-curso"
+                      role="button">
+                      Excluir
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          )}
         </table>
       </div>
     </LoadingHolder>

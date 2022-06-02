@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation } from "react-query";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 
@@ -14,55 +14,43 @@ const validationSchema = Yup.object({
   name: Yup.string().required("Campo obrigatório"),
 });
 
-export default function Add() {
-  const [loading, setLoading] = useState(false);
-  const [curso, setCurso] = useState({
-    name: "",
-  });
+export default function Edit() {
+  const navigate = useNavigate();
 
   const { id } = useParams();
-
-  const navigate = useNavigate();
+  const currentCurso = useQuery(`curso-${id}`, () => findCurso(id));
+  const fetchUpdateCurso = useMutation(formData => updateCurso(id, formData), {
+    onSuccess: () => navigate("/cursos", { replace: true }),
+  });
 
   const formik = useFormik({
     enableReinitialize: true,
-    initialValues: curso,
+    initialValues:
+      currentCurso.status === "success"
+        ? currentCurso.data
+        : {
+            name: "",
+          },
     validationSchema,
-    onSubmit: async values => {
-      setLoading(true);
-
-      try {
-        const data = await updateCurso(id, values);
-        if (!!data?.success) {
-          navigate("/cursos", { replace: true });
-        }
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        setLoading(false);
-      }
+    onSubmit: values => {
+      fetchUpdateCurso.mutate(values);
     },
   });
 
-  async function fetchCurso(id) {
-    setLoading(true);
-
-    try {
-      const data = await findCurso(id);
-      setCurso(data);
-    } catch (err) {
-      alert("Não foi possível carregar os dados do curso do sistema");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchCurso(id);
-  }, [id]);
+  const isLoading = !!currentCurso.isLoading || !!fetchUpdateCurso.isLoading;
 
   return (
-    <LoadingHolder loading={!!loading}>
+    <LoadingHolder loading={isLoading}>
+      {fetchUpdateCurso.status === "error" && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          Não foi possível salvar este novo curso no momento
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => fetchUpdateCurso.reset()}></button>
+        </div>
+      )}
       <form onSubmit={formik.handleSubmit} noValidate>
         <h2 className="h3 mb-4 fw-normal">Editando Curso</h2>
         <SysInput
@@ -73,7 +61,7 @@ export default function Add() {
           onChange={formik.handleChange}
           error={hasFormError(formik, "name")}
         />
-        <button className="btn btn-lg btn-primary mt-3" type="submit">
+        <button disabled={isLoading} className="btn btn-lg btn-primary mt-3" type="submit">
           Alterar
         </button>
       </form>

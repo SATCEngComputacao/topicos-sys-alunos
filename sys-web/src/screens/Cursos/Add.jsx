@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation } from "react-query";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 
@@ -15,33 +15,34 @@ const validationSchema = Yup.object({
 });
 
 export default function Add() {
-  const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
+
+  const fetchCreateCurso = useMutation(createCurso, {
+    onSuccess: () => navigate("/cursos", { replace: true }),
+  });
 
   const formik = useFormik({
     initialValues: {
       name: "",
     },
     validationSchema,
-    onSubmit: async values => {
-      setLoading(true);
-
-      try {
-        const data = await createCurso(values);
-        if (!!data?.id) {
-          navigate("/cursos", { replace: true });
-        }
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        setLoading(false);
-      }
+    onSubmit: values => {
+      fetchCreateCurso.mutate(values);
     },
   });
 
   return (
-    <LoadingHolder loading={!!loading}>
+    <LoadingHolder loading={!!fetchCreateCurso.isLoading}>
+      {fetchCreateCurso.status === "error" && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          Não foi possível salvar este novo curso no momento
+          <button
+            type="button"
+            className="btn-close"
+            aria-label="Close"
+            onClick={() => fetchCreateCurso.reset()}></button>
+        </div>
+      )}
       <form onSubmit={formik.handleSubmit} noValidate>
         <h2 className="h3 mb-4 fw-normal">Adicionando novo Curso</h2>
         <SysInput
@@ -52,7 +53,7 @@ export default function Add() {
           onChange={formik.handleChange}
           error={hasFormError(formik, "name")}
         />
-        <button className="btn btn-lg btn-primary mt-3" type="submit">
+        <button disabled={!!fetchCreateCurso.isLoading} className="btn btn-lg btn-primary mt-3" type="submit">
           Cadastrar
         </button>
       </form>
