@@ -1,56 +1,26 @@
-import { API_URL, defaults } from "~/env";
+import axios from "axios";
 
 export async function listCursos() {
-  const response = await fetch(`${API_URL}/cursos`, {
-    headers: defaults.headers,
-  });
-
-  const data = await response.json();
-
+  const { data } = await axios.get(`/cursos`);
   return data;
 }
 
 export async function findCurso(id) {
-  const response = await fetch(`${API_URL}/cursos/${id}`, {
-    headers: defaults.headers,
-  });
-
-  const data = await response.json();
-
+  const { data } = await axios.get(`/cursos/${id}`);
   return data;
 }
 
 export async function createCurso(formData) {
-  const response = await fetch(`${API_URL}/cursos`, {
-    method: "POST",
-    headers: defaults.headers,
-    body: JSON.stringify(formData),
-  });
-
-  const data = await response.json();
-
+  const { data } = await axios.post(`/cursos`, formData);
   return data;
 }
 
 export async function updateCurso(id, formData) {
-  const response = await fetch(`${API_URL}/cursos/${id}`, {
-    method: "PUT",
-    headers: defaults.headers,
-    body: JSON.stringify(formData),
-  });
-
-  const data = await response.json();
-
+  const { data } = await axios.put(`/cursos/${id}`, formData);
   return data;
 }
 
 export async function destroyCurso(id) {
-  const response = await fetch(`${API_URL}/cursos/${id}`, {
-    method: "DELETE",
-    headers: defaults.headers,
-  });
-
-  const data = await response.json();
-
+  const { data } = await axios.delete(`/cursos/${id}`);
   return data;
 }

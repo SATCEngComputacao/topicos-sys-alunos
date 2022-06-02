@@ -1,4 +1,4 @@
-import { useUsuario } from "~/context/Usuario";
+import { useUsuario } from "~/context/UsuarioContext";
 
 export default function Home() {
   const { usuario } = useUsuario();

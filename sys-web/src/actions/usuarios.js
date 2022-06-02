@@ -1,14 +1,6 @@
-import { API_URL, defaults } from "~/env";
+import axios from "axios";
 
 export async function fetchLogin(formData) {
-  // { email: xxxx, password: xxxx }
-  const response = await fetch(`${API_URL}/usuarios/login`, {
-    method: "POST",
-    headers: defaults.headers,
-    body: JSON.stringify(formData),
-  });
-
-  const data = await response.json();
-
+  const { data } = await axios.post(`/usuarios/login`, formData);
   return data;
 }

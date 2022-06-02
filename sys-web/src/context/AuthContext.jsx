@@ -1,26 +1,44 @@
 import { useContext, createContext, useState, useEffect } from "react";
+import axios from "axios";
 
-import { defaults } from "~/env";
+import { API_URL } from "~/env";
 import { fetchLogin } from "~/actions/usuarios";
+
+import LoadingHolder from "~/components/LoadingHolder";
 
 const USUARIO_KEY = "@usuario";
 
 const AuthContext = createContext();
 
-function setToken(token = null) {
-  if (!!token) {
-    defaults.headers.Authorization = `Bearer ${token}`;
-  } else {
-    defaults.headers.Authorization = null;
-    delete defaults.headers.Authorization;
+let _lastInterceptor = null;
+function setAxiosInterceptorWithToken(token = null) {
+  // caso já tivéssemos setado um interceptador antes do axios
+  // a ideia é remover ele antes de adicionar a versão atualizada
+  if (!!_lastInterceptor) {
+    axios.interceptors.request.eject(_lastInterceptor);
+    _lastInterceptor = null;
   }
+
+  // ao adicionar um interceptor (com ou sem header de auth)
+  // salvamos a referencia do mesmo para "ejetar" depois em uma
+  // eventual mudança/atualização nos headers
+  _lastInterceptor = axios.interceptors.request.use(config => {
+    config.baseURL = API_URL;
+    if (!!token) {
+      config.headers.common.Authorization = `Bearer ${token}`;
+    } else {
+      config.headers.common.Authorization = null;
+      delete config.headers.common.Authorization;
+    }
+    return config;
+  });
 }
 
 function restoreLoginFromStorage() {
   let storageUsuario = window.localStorage.getItem(USUARIO_KEY);
   if (!!storageUsuario) {
     storageUsuario = JSON.parse(storageUsuario);
-    setToken(storageUsuario?.token);
+    setAxiosInterceptorWithToken(storageUsuario?.token);
 
     return storageUsuario;
   }
@@ -33,6 +51,7 @@ function persistLoginInStorage(usuario) {
 }
 
 function AuthProvider(props) {
+  const [isPreloadingLogin, setIsPreloadingLogin] = useState(true);
   const [data, setData] = useState(null);
 
   const login = async ({ email, password }) => {
@@ -45,6 +64,7 @@ function AuthProvider(props) {
       if (!!loginData && !!loginData.usuario && !!loginData.token) {
         const sessionData = { usuario: loginData.usuario, token: loginData.token };
         setData(sessionData);
+        setAxiosInterceptorWithToken(sessionData.token);
         persistLoginInStorage(sessionData);
         return;
       }
@@ -59,7 +79,7 @@ function AuthProvider(props) {
 
   const logout = () => {
     setData(null);
-    setToken(null);
+    setAxiosInterceptorWithToken(null);
     persistLoginInStorage(null);
   };
 
@@ -70,7 +90,16 @@ function AuthProvider(props) {
         setData(storageUsuario);
       }
     }
+    setIsPreloadingLogin(false);
   }, []);
+
+  if (!!isPreloadingLogin) {
+    return (
+      <LoadingHolder loading={true}>
+        <div style={{ width: "100%", height: "100%" }}></div>
+      </LoadingHolder>
+    );
+  }
 
   return <AuthContext.Provider value={{ data, login, logout }} {...props} />;
 }

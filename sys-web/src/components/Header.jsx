@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 
-import { useAuth } from "~/context/Auth";
-import { useUsuario } from "~/context/Usuario";
+import { useAuth } from "~/context/AuthContext";
+import { useUsuario } from "~/context/UsuarioContext";
 
 function UserMenu() {
   const navigate = useNavigate();

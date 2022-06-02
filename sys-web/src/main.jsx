@@ -2,8 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
-import { AuthProvider } from "./context/Auth";
-import { UsuarioProvider } from "./context/Usuario";
+import { AuthProvider } from "./context/AuthContext";
+import { UsuarioProvider } from "./context/UsuarioContext";
 
 import App from "./App";
 import "./index.css";

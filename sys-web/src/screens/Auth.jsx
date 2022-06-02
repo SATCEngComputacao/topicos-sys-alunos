@@ -1,10 +1,9 @@
-import { useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 
-import { useAuth } from "../context/Auth";
-import { useUsuario } from "../context/Usuario";
+import { useAuth } from "../context/AuthContext";
 
 import LoadingHolder from "../components/LoadingHolder";
 import SysInput from "../components/SysInput";
@@ -17,8 +16,8 @@ const validationSchema = Yup.object({
 });
 
 export default function Auth() {
+  let [loading, setLoading] = useState(false);
   let { login } = useAuth();
-  let { isLogged } = useUsuario();
 
   let navigate = useNavigate();
 
@@ -29,24 +28,22 @@ export default function Auth() {
     },
     validationSchema,
     onSubmit: async values => {
+      setLoading(true);
+
       try {
         await login(values);
         navigate("/", { replace: true });
       } catch (err) {
         alert(err.message);
+      } finally {
+        setLoading(false);
       }
     },
   });
 
-  useEffect(() => {
-    if (!!isLogged) {
-      navigate("/", { replace: true });
-    }
-  }, [isLogged]);
-
   return (
     <main className="form-signin">
-      <LoadingHolder loading={false}>
+      <LoadingHolder loading={!!loading}>
         <form onSubmit={formik.handleSubmit} noValidate>
           <h1 className="h3 mb-3 fw-normal">SYS Aluno</h1>
           <SysInput
