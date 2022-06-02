@@ -10,35 +10,21 @@ const USUARIO_KEY = "@usuario";
 
 const AuthContext = createContext();
 
-let _lastInterceptor = null;
-function setAxiosInterceptorWithToken(token = null) {
-  // caso já tivéssemos setado um interceptador antes do axios
-  // a ideia é remover ele antes de adicionar a versão atualizada
-  if (!!_lastInterceptor) {
-    axios.interceptors.request.eject(_lastInterceptor);
-    _lastInterceptor = null;
+function setAxiosDefaults(token = null) {
+  axios.defaults.baseURL = API_URL;
+  if (!!token) {
+    axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+  } else {
+    axios.defaults.headers.common.Authorization = null;
+    delete axios.defaults.headers.common.Authorization;
   }
-
-  // ao adicionar um interceptor (com ou sem header de auth)
-  // salvamos a referencia do mesmo para "ejetar" depois em uma
-  // eventual mudança/atualização nos headers
-  _lastInterceptor = axios.interceptors.request.use(config => {
-    config.baseURL = API_URL;
-    if (!!token) {
-      config.headers.common.Authorization = `Bearer ${token}`;
-    } else {
-      config.headers.common.Authorization = null;
-      delete config.headers.common.Authorization;
-    }
-    return config;
-  });
 }
 
 function restoreLoginFromStorage() {
   let storageUsuario = window.localStorage.getItem(USUARIO_KEY);
   if (!!storageUsuario) {
     storageUsuario = JSON.parse(storageUsuario);
-    setAxiosInterceptorWithToken(storageUsuario?.token);
+    setAxiosDefaults(storageUsuario?.token);
 
     return storageUsuario;
   }
@@ -64,7 +50,7 @@ function AuthProvider(props) {
       if (!!loginData && !!loginData.usuario && !!loginData.token) {
         const sessionData = { usuario: loginData.usuario, token: loginData.token };
         setData(sessionData);
-        setAxiosInterceptorWithToken(sessionData.token);
+        setAxiosDefaults(sessionData.token);
         persistLoginInStorage(sessionData);
         return;
       }
@@ -79,7 +65,7 @@ function AuthProvider(props) {
 
   const logout = () => {
     setData(null);
-    setAxiosInterceptorWithToken(null);
+    setAxiosDefaults(null);
     persistLoginInStorage(null);
   };
 
