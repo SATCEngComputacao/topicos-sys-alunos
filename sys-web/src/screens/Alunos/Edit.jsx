@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery, useMutation } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 
@@ -20,10 +20,17 @@ const validationSchema = Yup.object({
 export default function Edit() {
   const navigate = useNavigate();
 
+  const queryClient = useQueryClient();
+
   const { id } = useParams();
   const currentAluno = useQuery(`aluno-${id}`, () => findAluno(id));
   const fetchUpdateAluno = useMutation(formData => updateAluno(id, formData), {
-    onSuccess: () => navigate("/alunos", { replace: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(`aluno-${id}`);
+      queryClient.invalidateQueries("alunos");
+
+      navigate("/alunos", { replace: true });
+    },
   });
 
   const cursos = useQuery("cursos", listCursos);

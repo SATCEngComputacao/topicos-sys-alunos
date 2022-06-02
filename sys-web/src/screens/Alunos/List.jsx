@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 import { Link } from "react-router-dom";
 
 import LoadingHolder from "~/components/LoadingHolder";
@@ -6,12 +6,19 @@ import LoadingHolder from "~/components/LoadingHolder";
 import { listAlunos, destroyAluno } from "~/actions/alunos";
 
 export default function List() {
+  const queryClient = useQueryClient();
+
   // alunos.isLoading = vai indicar um carregamento ta rolando ou nao
   // alunos.data = conter os dados do servidor após o carregamento (ou do cache)
   // alunos.status = success, error ou loading
   // alunos.error = mensagem de erro que veio do servidor
   const alunos = useQuery("alunos", listAlunos);
-  const fetchDestroyAluno = useMutation(item => destroyAluno(item.id));
+
+  const fetchDestroyAluno = useMutation(item => destroyAluno(item.id), {
+    onSuccess: () => {
+      queryClient.invalidateQueries("alunos");
+    },
+  });
 
   const isLoading = !!alunos.isLoading || !!fetchDestroyAluno.isLoading;
 
