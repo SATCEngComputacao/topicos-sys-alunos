@@ -1,6 +1,8 @@
 import { Fragment } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
+import { useUsuario } from "./context/Usuario";
+
 import AppLayout from "./layouts/AppLayout";
 import LoginLayout from "./layouts/LoginLayout";
 
@@ -24,7 +26,7 @@ function RequireLogin() {
 }
 
 function App() {
-  const isLogged = false;
+  const { isLogged } = useUsuario();
 
   return (
     <div className="App">

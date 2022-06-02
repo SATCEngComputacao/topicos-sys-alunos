@@ -1,6 +1,10 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+
+import { useAuth } from "../context/Auth";
+import { useUsuario } from "../context/Usuario";
 
 import LoadingHolder from "../components/LoadingHolder";
 import SysInput from "../components/SysInput";
@@ -13,6 +17,9 @@ const validationSchema = Yup.object({
 });
 
 export default function Auth() {
+  let { login } = useAuth();
+  let { isLogged } = useUsuario();
+
   let navigate = useNavigate();
 
   const formik = useFormik({
@@ -23,13 +30,19 @@ export default function Auth() {
     validationSchema,
     onSubmit: async values => {
       try {
-        // await login(values.email, values.password);
+        await login(values);
         navigate("/", { replace: true });
       } catch (err) {
         alert(err.message);
       }
     },
   });
+
+  useEffect(() => {
+    if (!!isLogged) {
+      navigate("/", { replace: true });
+    }
+  }, [isLogged]);
 
   return (
     <main className="form-signin">

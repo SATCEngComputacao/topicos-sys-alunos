@@ -67,6 +67,8 @@ export default function List() {
           <thead>
             <tr>
               <th>Nome</th>
+              <th>E-mail</th>
+              <th>Curso</th>
               <th className="text-center" style={{ width: 146 }}>
                 Ações
               </th>
@@ -75,7 +77,7 @@ export default function List() {
           <tbody>
             {items.length === 0 && !loading && (
               <tr>
-                <td colSpan={3} className="text-center p-5">
+                <td colSpan={4} className="text-center p-5">
                   Nenhum aluno cadastrado em nosso sistema!
                 </td>
               </tr>
@@ -83,6 +85,10 @@ export default function List() {
             {items.map(item => (
               <tr key={item.id}>
                 <td>{item.name}</td>
+                <td>
+                  <a href={`mailto:${item.email}`}>{item.email}</a>
+                </td>
+                <td>{item.Curso.name}</td>
                 <td className="text-center">
                   <Link className="btn btn-info btn-sm" to={`/alunos/edit/${item.id}`} role="button">
                     Editar
