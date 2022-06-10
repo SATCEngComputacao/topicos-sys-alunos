@@ -4,6 +4,23 @@ const { TOKEN_SECRET } = require("../env");
 const { encryptSHA256 } = require("../auth");
 const { Usuario } = require("../models");
 
+exports.seedUsuario = async (req, res) => {
+  const usuarios = await Usuario.findAll();
+  if (!usuarios || !usuarios.length) {
+    await Usuario.create({
+      name: "Prof. Lucas Ferreira",
+      email: "lucas.ferreira@satc.edu.br",
+      password: encryptSHA256("123456"),
+      type: "admin",
+    });
+
+    res.json({ success: true });
+    return;
+  }
+
+  res.json({ success: false });
+};
+
 exports.checkLogin = async (req, res) => {
   // recebendo o e-mail e senha enviado para login
   const { email, password } = req.body;

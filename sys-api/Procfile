@@ -1,0 +1,2 @@
+release: npx sequelize-cli db:migrate --env production
+web: npm run heroku

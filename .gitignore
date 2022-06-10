@@ -12,7 +12,8 @@
 
 # production
 /sys-web/build
-/sys-api/uploads/*
+/sys-api/uploads/*.png
+/sys-api/uploads/*.jpg
 
 # misc
 .DS_Store
